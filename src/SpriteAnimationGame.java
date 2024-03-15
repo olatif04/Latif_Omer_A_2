@@ -49,12 +49,12 @@ public class SpriteAnimationGame extends JPanel implements KeyListener, Runnable
         setFocusable(true);
         addKeyListener(this);
 
-        loadSpriteSheet(); // Ensure this is the first call in the constructor
+        loadSpriteSheet();
         if (spriteSheet == null) {
             throw new RuntimeException("Sprite sheet could not be loaded.");
         }
         initializeGameObjects();
-        loadGameState(); // Load game state after initializing game objects
+        loadGameState();
         startGame();
     }
 
@@ -82,13 +82,11 @@ public class SpriteAnimationGame extends JPanel implements KeyListener, Runnable
     }
 
     private void initializeGameObjects() {
-        // Initialize character properties
         character = new Rectangle(100, 100, SPRITE_SIZE, SPRITE_SIZE);
         currentAnimation = IDLE;
         animationFrame = 0;
         frameDelay = 0;
 
-        // Initialize power-up locations
         powerUpLocations = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
             int x = (int) (Math.random() * (WINDOW_WIDTH - SPRITE_SIZE));
@@ -115,7 +113,7 @@ public class SpriteAnimationGame extends JPanel implements KeyListener, Runnable
 
             long timeTaken = System.currentTimeMillis() - startTime;
             long timeLeft = (1000 / 60) - timeTaken; // Target 60 FPS
-            if (timeLeft < 5) timeLeft = 5; // Minimum delay
+            if (timeLeft < 5) timeLeft = 5;
             try {
                 Thread.sleep(timeLeft);
             } catch (InterruptedException e) {
@@ -125,29 +123,25 @@ public class SpriteAnimationGame extends JPanel implements KeyListener, Runnable
     }
 
     private void updateGame() {
-        // Update the character's position
         character.x += dx * characterSpeed;
         character.y += dy * characterSpeed;
 
-        // Keep the character within bounds
         if (character.x < 0) character.x = 0;
         if (character.y < 0) character.y = 0;
         if (character.x > WINDOW_WIDTH - SPRITE_SIZE) character.x = WINDOW_WIDTH - SPRITE_SIZE;
         if (character.y > WINDOW_HEIGHT - SPRITE_SIZE) character.y = WINDOW_HEIGHT - SPRITE_SIZE;
 
-        // Update the animation frame
         frameDelay++;
         if (frameDelay > 5) {
             if (currentAnimation == IDLE) {
-                // Assuming the idle animation uses the first 7 frames (0-6)
-                animationFrame = (animationFrame + 1) % 7; // Only cycle through the first 7 frames
+
+                animationFrame = (animationFrame + 1) % 7;
             } else {
                 animationFrame = (animationFrame + 1) % SPRITE_SHEET_WIDTH;
             }
             frameDelay = 0;
         }
 
-        // Check for collision with power-ups
         Rectangle charRect = new Rectangle(character.x, character.y, SPRITE_SIZE, SPRITE_SIZE);
         ArrayList<Point> toRemove = new ArrayList<>();
         for (Point powerUp : powerUpLocations) {
@@ -164,31 +158,26 @@ public class SpriteAnimationGame extends JPanel implements KeyListener, Runnable
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        // Draw background tiles
         for (int y = 0; y < getHeight(); y += SPRITE_SIZE) {
             for (int x = 0; x < getWidth(); x += SPRITE_SIZE) {
                 g.drawImage(backgroundTile, x, y, this);
             }
         }
 
-        // Draw power-ups
         for (Point powerUp : powerUpLocations) {
             g.drawImage(powerUpSprite, powerUp.x, powerUp.y, this);
         }
 
-        // Draw the character
         if (currentAnimation == RUNNING_RIGHT) {
             Graphics2D g2d = (Graphics2D) g.create();
-            // Flip the image horizontally
             int drawLocationX = character.x + SPRITE_SIZE;
             g2d.scale(-1, 1);
             g2d.drawImage(animations[RUNNING_LEFT][animationFrame], -drawLocationX, character.y, SPRITE_SIZE, SPRITE_SIZE, this);
-            g2d.dispose(); // Clean up
+            g2d.dispose();
         } else {
             g.drawImage(animations[currentAnimation][animationFrame], character.x, character.y, SPRITE_SIZE, SPRITE_SIZE, this);
         }
 
-        // Draw the score
         g.setColor(Color.WHITE);
         g.drawString("Score: " + score, 10, 20);
     }
@@ -235,14 +224,14 @@ public class SpriteAnimationGame extends JPanel implements KeyListener, Runnable
 
     @Override
     public void keyTyped(KeyEvent e) {
-        // Not used, but required by KeyListener
+
     }
 
     private void saveGameState() {
         try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("gameState.sav"))) {
-            out.writeObject(character); // Save character position and size
-            out.writeInt(score); // Save score
-            out.writeObject(powerUpLocations); // Save power-up locations
+            out.writeObject(character);
+            out.writeInt(score);
+            out.writeObject(powerUpLocations);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -253,9 +242,9 @@ public class SpriteAnimationGame extends JPanel implements KeyListener, Runnable
         File file = new File("gameState.sav");
         if (file.exists()) {
             try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(file))) {
-                character = (Rectangle) in.readObject(); // Load character position and size
-                score = in.readInt(); // Load score
-                powerUpLocations = (ArrayList<Point>) in.readObject(); // Load power-up locations
+                character = (Rectangle) in.readObject();
+                score = in.readInt();
+                powerUpLocations = (ArrayList<Point>) in.readObject();
             } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
             }
@@ -273,11 +262,10 @@ public class SpriteAnimationGame extends JPanel implements KeyListener, Runnable
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
-        // Add window listener to save game state upon closing
         frame.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
-                gamePanel.saveGameState(); // Save the game state
+                gamePanel.saveGameState();
             }
         });
     }
