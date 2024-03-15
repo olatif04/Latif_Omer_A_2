@@ -49,13 +49,15 @@ public class SpriteAnimationGame extends JPanel implements KeyListener, Runnable
         setFocusable(true);
         addKeyListener(this);
 
-        loadSpriteSheet();  // Ensure this is the first call in the constructor
+        loadSpriteSheet(); // Ensure this is the first call in the constructor
         if (spriteSheet == null) {
             throw new RuntimeException("Sprite sheet could not be loaded.");
         }
         initializeGameObjects();
+        loadGameState(); // Load game state after initializing game objects
         startGame();
     }
+
 
     private void loadSpriteSheet() {
         try {
@@ -175,12 +177,22 @@ public class SpriteAnimationGame extends JPanel implements KeyListener, Runnable
         }
 
         // Draw the character
-        g.drawImage(animations[currentAnimation][animationFrame], character.x, character.y, SPRITE_SIZE, SPRITE_SIZE, this);
+        if (currentAnimation == RUNNING_RIGHT) {
+            Graphics2D g2d = (Graphics2D) g.create();
+            // Flip the image horizontally
+            int drawLocationX = character.x + SPRITE_SIZE;
+            g2d.scale(-1, 1);
+            g2d.drawImage(animations[RUNNING_LEFT][animationFrame], -drawLocationX, character.y, SPRITE_SIZE, SPRITE_SIZE, this);
+            g2d.dispose(); // Clean up
+        } else {
+            g.drawImage(animations[currentAnimation][animationFrame], character.x, character.y, SPRITE_SIZE, SPRITE_SIZE, this);
+        }
 
         // Draw the score
         g.setColor(Color.WHITE);
         g.drawString("Score: " + score, 10, 20);
     }
+
 
     @Override
     public void keyPressed(KeyEvent e) {
@@ -226,6 +238,31 @@ public class SpriteAnimationGame extends JPanel implements KeyListener, Runnable
         // Not used, but required by KeyListener
     }
 
+    private void saveGameState() {
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("gameState.sav"))) {
+            out.writeObject(character); // Save character position and size
+            out.writeInt(score); // Save score
+            out.writeObject(powerUpLocations); // Save power-up locations
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    private void loadGameState() {
+        File file = new File("gameState.sav");
+        if (file.exists()) {
+            try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(file))) {
+                character = (Rectangle) in.readObject(); // Load character position and size
+                score = in.readInt(); // Load score
+                powerUpLocations = (ArrayList<Point>) in.readObject(); // Load power-up locations
+            } catch (IOException | ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
     public static void main(String[] args) {
         JFrame frame = new JFrame("Sprite Animation Game");
         SpriteAnimationGame gamePanel = new SpriteAnimationGame();
@@ -235,5 +272,13 @@ public class SpriteAnimationGame extends JPanel implements KeyListener, Runnable
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+
+        // Add window listener to save game state upon closing
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                gamePanel.saveGameState(); // Save the game state
+            }
+        });
     }
 }
